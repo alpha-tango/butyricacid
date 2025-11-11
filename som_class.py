@@ -207,3 +207,46 @@ def plot_feature_map_hex(som_hex, input_data, target_values, feature_name=None,
     plt.tight_layout()
 
     return fig, ax, feature_map
+
+
+def plot_weight_component_hex(som_hex, component_idx, component_name=None,
+                               cmap='viridis', figsize=(12, 10)):
+    weight_map = {}
+
+    for coord, weights in som_hex.neurons.items():
+        weight_map[coord] = weights[component_idx]
+
+    fig, ax = plt.subplots(figsize=figsize)
+    hex_radius = 0.5
+    hex_height = np.sqrt(3) * hex_radius
+    values = list(weight_map.values())
+    vmin, vmax = min(values), max(values)
+    norm = Normalize(vmin=vmin, vmax=vmax)
+    sm = ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+
+    for (q, r), value in weight_map.items():
+        col = q + (r - (r & 1)) // 2
+        x = col * hex_radius * np.sqrt(3)
+        y = r * hex_height
+        if r & 1:
+            x += hex_radius * np.sqrt(3) / 2
+        color = sm.to_rgba(value)
+        hexagon = RegularPolygon((x, y), numVertices=6, radius=hex_radius,
+                                orientation=0, facecolor=color,
+                                edgecolor='gray', linewidth=0.5, alpha=0.9)
+        ax.add_patch(hexagon)
+
+    label = component_name if component_name else f'Component {component_idx}'
+    plt.colorbar(sm, ax=ax, label=label)
+    ax.set_aspect('equal')
+    margin = 1.0
+    ax.set_xlim(-margin, som_hex.map_width * hex_radius * np.sqrt(3) + margin)
+    ax.set_ylim(-margin, som_hex.map_height * hex_height + margin)
+    ax.axis('off')
+
+    title = f'Weight Component: {component_name}' if component_name else f'Weight Component {component_idx}'
+    ax.set_title(title, fontsize=14, pad=15)
+    plt.tight_layout()
+
+    return fig, ax, weight_map
